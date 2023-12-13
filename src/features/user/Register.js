@@ -34,54 +34,12 @@ import FormWizard from 'react-form-wizard-component';
 import 'react-form-wizard-component/dist/style.css';
 import ForwardIcon from '@heroicons/react/24/outline/ForwardIcon';
 import BackwardIcon from '@heroicons/react/24/outline/BackwardIcon';
+import PlayCircleIcon from '@heroicons/react/24/outline/PlusCircleIcon';
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function Login() {
-  const INITIAL_LOGIN_OBJ = {
-    password: '',
-    emailId: ''
-  };
-
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [loginObj, setLoginObj] = useState(INITIAL_LOGIN_OBJ);
-
-  const { ref } = usePlacesWidget({
-    apiKey: 'AIzaSyC0VFvsZIq2XFtAatvfsiiA1ZT3Vzmcf8Y',
-    onPlaceSelected: place => {
-      console.log(place);
-    },
-    options: {
-      types: ['(regions)'],
-      componentRestrictions: { country: 'ph' }
-    }
-  });
-
-  const submitForm = e => {
-    e.preventDefault();
-    setErrorMessage('');
-
-    if (loginObj.emailId.trim() === '')
-      return setErrorMessage('Email Id is required! (use any value)');
-    if (loginObj.password.trim() === '')
-      return setErrorMessage('Password is required! (use any value)');
-    else {
-      setLoading(true);
-      // Call API to check user credentials and save token in localstorage
-      localStorage.setItem('token', 'DumyTokenHere');
-      setLoading(false);
-      window.location.href = '/app/welcome';
-    }
-  };
-
-  const updateFormValue = ({ updateType, value }) => {
-    setErrorMessage('');
-    setLoginObj({ ...loginObj, [updateType]: value });
-  };
-
-  const handleComplete = () => {
-    console.log('Form completed!');
-    // Handle form completion logic here
-  };
-
   const amulet_packageSelection = [
     {
       label: 'SGEP 8 Package',
@@ -157,8 +115,41 @@ function Login() {
       signature: Yup.string().required('Required'),
       date_sign: Yup.string().required('Required')
     }),
-    onSubmit: values => {
-      console.log(JSON.stringify(values, null, 2));
+    onSubmit: async values => {
+      let memberData = values;
+
+      try {
+        let res = await axios({
+          method: 'POST',
+          url: 'user/create',
+          data: memberData
+        });
+
+        let data = res.data;
+
+        toast.success('Created Successfully', {
+          position: 'top-right',
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: 'light'
+        });
+        return data;
+      } catch (error) {
+        toast.error('Something went wrong', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: 'light'
+        });
+      }
     }
   };
 
@@ -238,12 +229,24 @@ function Login() {
                   <FormWizard
                     onComplete={() => {
                       handleSubmit();
-                      console.log(errors);
                     }}
                     onTabChange={handleTabChange}
                     stepSize="xs"
                     color="#22c55e"
                     finishButtonText="Submit"
+                    finishButtonTemplate={handleComplete => (
+                      <div>
+                        <button
+                          type="button"
+                          className="btn mt-2 justify-end  btn-primary float-right"
+                          onClick={() => {
+                            handleComplete();
+                          }}>
+                          <PlayCircleIcon className="h-6 w-6" />
+                          Submit
+                        </button>
+                      </div>
+                    )}
                     backButtonTemplate={handlePrevious => (
                       <div>
                         <button
@@ -276,10 +279,7 @@ function Login() {
                               validation
                             );
 
-                            console.log({ errorKeys });
-
                             if (hasFirstValidationError === false) {
-                              console.log('Dex');
                               handleNext();
                             }
                           }}>
@@ -623,6 +623,7 @@ function Login() {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }
